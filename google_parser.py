@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 import sys
 
@@ -40,7 +41,8 @@ def parse_html(html, query):
             if link != '#' and description is not None:
                 found_results.append({'index': index, 'query': query,
                                       'link': link, 'title': title,
-                                      'description': description})
+                                      'description': description,
+                                      'time': datetime.now()})
                 index += 1
     return found_results
 
@@ -57,7 +59,7 @@ def scrape_google(query, number, language_code='en'):
         raise Exception("Appears to be an issue with your connection")
 
 
-def main(query, number, language_code):
+def google_parser(query, number, language_code):
     results = scrape_google(query=query, number=number, language_code=language_code)
 
     for i in results:
@@ -75,4 +77,4 @@ if '__main__' == __name__:
     How to run this script? (example):
         python main.py "право постійного користування земельною ділянкою" 3 ru
     """
-    main(query=sys.argv[1], number=int(sys.argv[2]), language_code=sys.argv[3])
+    google_parser(query=sys.argv[1], number=int(sys.argv[2]), language_code=sys.argv[3])
