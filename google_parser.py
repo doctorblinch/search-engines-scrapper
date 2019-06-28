@@ -65,7 +65,7 @@ def google_parser(query, number, language_code):
     for i in results:
         print(i)
 
-    return  results
+    return results
 
 
 if '__main__' == __name__:
