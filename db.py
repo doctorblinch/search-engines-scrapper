@@ -20,8 +20,9 @@ def write_to_db(result, engine='default'):
     cursor = connection.cursor()
     for res in result:
         for element in res:
-            cursor.execute("""INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
-                           (%s, %s, %s, %s, %s, %s, %s);""", (element['index'], element['query'],
+            query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
+                           (%s, %s, %s, %s, %s, %s, %s);"""
+            cursor.execute(query, (element['index'], element['query'],
                                                               element['link'], element['title'],
                                                               element['description'], element['time'],
                                                               engine))

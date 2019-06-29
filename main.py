@@ -19,8 +19,7 @@ num_of_links = 10
 for engine in engines:
     results = []
     for request in requests:
-        engine_parser.ENGINE = engine
-        results.append(engine_parser.start_engine_scrapping(request, num_of_links, 'ru'))
+        results.append(engine_parser.start_engine_scrapping(request, num_of_links, 'ru', engine=engine))
     write_to_db(results, engine)
 
 read_from_db()
