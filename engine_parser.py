@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 from datetime import datetime
 
 from random import choice, uniform
@@ -90,9 +91,8 @@ class EngineParser:
 
     def __scrape(self, query, number, language_code, use_proxy):
         # set User-Agent header
-        with open('useragents.txt') as file:
-            user_agents = file.read().split('\n')
-            user_agent = {'User-Agent': choice(user_agents)}
+        ua = UserAgent()
+        user_agent = {"User-Agent": ua.random}
 
         # set proxy
         if use_proxy:

@@ -22,10 +22,10 @@ for engine in engines:
         results.append(engine_parser.start_engine_scrapping(request, num_of_links, 'ru', engine=engine))
     write_to_db(results, engine)
 
-read_from_db()
+# Print the added to DB querries
+#print(read_from_db(len(engines)*len(requests)*num_of_links))
 
 # with open('output.json', 'w', encoding='utf-8') as outfile:
 #    json.dump(results, outfile,indent=4,sort_keys=True,ensure_ascii=False)
 #
 # json.dump(output, twitter_data_file, indent=4, sort_keys=True)
-

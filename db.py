@@ -31,8 +31,10 @@ def write_to_db(result, engine='default'):
     print("Elements of %s parsing successfully inserted in PostgreSQL " % engine)
 
 
-def read_from_db():
+def read_from_db(quantity='all'):
     cursor = connection.cursor()
     cursor.execute("SELECT * FROM scrapes;")
     record = cursor.fetchall()
-    return record
+    if quantity == 'all':
+        return record
+    return record[-quantity:]
