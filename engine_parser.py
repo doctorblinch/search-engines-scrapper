@@ -21,14 +21,17 @@ class EngineParser:
             url = 'https://www.bing.com/search?q={}&count={}'.format(query, number)
         elif self.ENGINE == 'google':
             url = 'https://www.google.com/search?q={}&num={}&hl={}'.format(query, number, language_code)
+        elif self.ENGINE == 'yahoo':
+            url = 'https://search.yahoo.com/search?p={}&n={}&ei=UTF-8'.format(query,number)
 
         # get page with timeout = 5sec (for imitation user activity)
-        response = requests.get(url, headers=user_agent, proxies=proxy, timeout=timeout)
+        response = requests.get(url, headers=user_agent, proxies=proxy)#, timeout=timeout)
 
         # error checking
         response.raise_for_status()
 
         # return HTML code of page
+
         return response.text
 
     def __parse_bing_html(self, html, query):
@@ -89,6 +92,37 @@ class EngineParser:
                     index += 1
         return found_results
 
+    def __parse_yahoo_html(self, html, query):
+        soup = BeautifulSoup(html, 'lxml')
+
+        found_results = []
+        index = 1
+        result_block = soup.findAll('div', attrs={'class': 'dd algo algo-sr Sr'})
+        #print('Url= ', result_block)
+        #input()
+
+        for result in result_block:
+
+            link = result.find('a',href=True)
+            title = result.find('h3')
+            description = result.find('p', attrs={'class': 'lh-16'})
+            #print('Link = ',link, '\ntitle = ', title, '\ndescription=', description)
+            if link and title:
+                link = link['href']
+                title = title.get_text().strip()
+                #split = link.split('')
+                if description:
+                    description = description.get_text().strip()
+                if link != '#' and description is not None:
+                    found_results.append({'index': index,'query': query,
+                                          'link': link,'title': title,
+                                          'description': description,
+                                          'time': datetime.now()})
+
+            index += 1
+        print(found_results)
+        return found_results
+
     def __scrape(self, query, number, language_code, use_proxy):
         # set User-Agent header
         ua = UserAgent()
@@ -115,6 +149,8 @@ class EngineParser:
                 return self.__parse_bing_html(html=html, query=query)
             elif self.ENGINE == 'google':
                 return self.__parse_google_html(html=html, query=query)
+            elif self.ENGINE == 'yahoo':
+                return self.__parse_yahoo_html(html=html, query=query)
 
         except AssertionError:
             raise Exception("Incorrect arguments parsed to function")
@@ -126,6 +162,8 @@ class EngineParser:
     def start_engine_scrapping(self, query, number, language_code,
                                print_output=False, engine='google', use_proxy=False):
         # set search engine
+        #if engine == None:
+            #self.ENGINE = 'google'
         self.ENGINE = engine.lower()
 
         # get results
@@ -152,4 +190,4 @@ if '__main__' == __name__:
     engine_parser = EngineParser('Google')
     engine_parser.start_engine_scrapping(query=sys.argv[1], number=int(sys.argv[2]),
                                          language_code=sys.argv[3], print_output=True,
-                                         use_proxy=True)
+                                         use_proxy=True, engine=engine_parser.ENGINE)
