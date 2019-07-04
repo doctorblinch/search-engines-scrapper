@@ -3,9 +3,24 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
 
+from time import time, sleep
+
 from random import choice, uniform
 
 import sys
+
+
+def timer(func):
+    def wrapper(self, *args, **kwargs):
+        start = time()
+        res = func(self, *args, **kwargs)
+        print('({}) Function {} ---> {} sec'.format(self.ENGINE, func.__name__, time() - start))
+        if func.__name__ == '__fetch_results':
+            print('Timeout:', kwargs['timeout'])
+        print()
+        return res
+
+    return wrapper
 
 
 class EngineParser:
@@ -13,7 +28,8 @@ class EngineParser:
         # Set engine
         self.ENGINE = engine.lower()
 
-    def __fetch_results(self, query, number, language_code, user_agent=None, proxy=None, timeout=5):
+    @timer
+    def __fetch_results(self, query, number, language_code, user_agent=None, proxy=None, timeout=5.0):
         url = ''
 
         # preparation of request link
@@ -22,10 +38,13 @@ class EngineParser:
         elif self.ENGINE == 'google':
             url = 'https://www.google.com/search?q={}&num={}&hl={}'.format(query, number, language_code)
         elif self.ENGINE == 'yahoo':
-            url = 'https://search.yahoo.com/search?p={}&n={}&ei=UTF-8'.format(query,number)
+            url = 'https://search.yahoo.com/search?p={}&n={}&ei=UTF-8'.format(query, number)
+
+        # delay between requests
+        sleep(timeout)
 
         # get page with timeout = 5sec (for imitation user activity)
-        response = requests.get(url, headers=user_agent, proxies=proxy)#, timeout=timeout)
+        response = requests.get(url, headers=user_agent, proxies=proxy, timeout=timeout)
 
         # error checking
         response.raise_for_status()
@@ -59,7 +78,8 @@ class EngineParser:
                     found_results.append({'index': index, 'query': query,
                                           'link': link, 'title': title,
                                           'description': description,
-                                          'time': datetime.now()})
+                                          'time': datetime.now(),
+                                          'engine': self.ENGINE})
                     index += 1
         return found_results
 
@@ -88,7 +108,8 @@ class EngineParser:
                     found_results.append({'index': index, 'query': query,
                                           'link': link, 'title': title,
                                           'description': description,
-                                          'time': datetime.now()})
+                                          'time': datetime.now(),
+                                          'engine': self.ENGINE})
                     index += 1
         return found_results
 
@@ -98,32 +119,33 @@ class EngineParser:
         found_results = []
         index = 1
         result_block = soup.findAll('div', attrs={'class': 'dd algo algo-sr Sr'})
-        #print('Url= ', result_block)
-        #input()
+        # print('Url= ', result_block)
+        # input()
 
         for result in result_block:
 
-            link = result.find('a',href=True)
+            link = result.find('a', href=True)
             title = result.find('h3')
             description = result.find('p', attrs={'class': 'lh-16'})
-            #print('Link = ',link, '\ntitle = ', title, '\ndescription=', description)
+            # print('Link = ',link, '\ntitle = ', title, '\ndescription=', description)
             if link and title:
                 link = link['href']
                 title = title.get_text().strip()
-                #split = link.split('')
+                # split = link.split('')
                 if description:
                     description = description.get_text().strip()
                 if link != '#' and description is not None:
-                    found_results.append({'index': index,'query': query,
-                                          'link': link,'title': title,
+                    found_results.append({'index': index, 'query': query,
+                                          'link': link, 'title': title,
                                           'description': description,
-                                          'time': datetime.now()})
+                                          'time': datetime.now(),
+                                          'engine': self.ENGINE})
 
             index += 1
-        print(found_results)
+        # print(found_results)
         return found_results
 
-    def __scrape(self, query, number, language_code, use_proxy):
+    def __scrape(self, query, number, language_code, use_proxy, timeout_range):
         # set User-Agent header
         ua = UserAgent()
         user_agent = {"User-Agent": ua.random}
@@ -137,7 +159,7 @@ class EngineParser:
             proxy = None
 
         # set timeout value
-        timeout = uniform(3, 6)
+        timeout = uniform(*timeout_range)
 
         try:
             # get HTML code of some page
@@ -159,19 +181,28 @@ class EngineParser:
         except requests.RequestException:
             raise Exception("Appears to be an issue with your connection")
 
-    def start_engine_scrapping(self, query, number, language_code,
-                               print_output=False, engine='google', use_proxy=False):
+    def start_engine_scrapping(self, query, number=10, language_code='ru',
+                               print_output=False, engine='google', use_proxy=False,
+                               timeout_range=(3, 5)):
         # set search engine
-        #if engine == None:
-            #self.ENGINE = 'google'
         self.ENGINE = engine.lower()
 
         # get results
-        results = self.__scrape(query=query, number=number, language_code=language_code, use_proxy=use_proxy)
+        results = self.__scrape(query=query, number=number,
+                                language_code=language_code,
+                                use_proxy=use_proxy,
+                                timeout_range=timeout_range)
 
         if print_output:
-            for i in results:
-                print(i)
+            print('---------------{}---------------'.format(self.ENGINE))
+            for res in results:
+                for key in res.keys():
+                    if key == 'index':
+                        print(key + ': ' + str(res[key]))
+                    else:
+                        print('\t' + key + ': ' + str(res[key]))
+                print()
+            print('---------------END---------------\n')
 
         return results
 
@@ -190,4 +221,5 @@ if '__main__' == __name__:
     engine_parser = EngineParser('Google')
     engine_parser.start_engine_scrapping(query=sys.argv[1], number=int(sys.argv[2]),
                                          language_code=sys.argv[3], print_output=True,
-                                         use_proxy=True, engine=engine_parser.ENGINE)
+                                         use_proxy=True, engine=engine_parser.ENGINE,
+                                         timeout_range=(3, 5))

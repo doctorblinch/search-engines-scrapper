@@ -16,19 +16,22 @@ engine.execute('SELECT * FROM users')
 '''
 
 
-def write_to_db(result, engine='default'):
+def write_to_db(result, engine):
+    if len(result) == 0:
+        return
+
     cursor = connection.cursor()
     for res in result:
         for element in res:
             query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
                            (%s, %s, %s, %s, %s, %s, %s);"""
             cursor.execute(query, (element['index'], element['query'],
-                                                              element['link'], element['title'],
-                                                              element['description'], element['time'],
-                                                              engine))
+                                   element['link'], element['title'],
+                                   element['description'], element['time'],
+                                   element['engine']))
             # cursor.execute(query)
     connection.commit()
-    print("Elements of %s parsing successfully inserted in PostgreSQL " % engine)
+    print("-Elements of %s parsing successfully inserted in PostgreSQL\n" % engine)
 
 
 def read_from_db(quantity='all'):
