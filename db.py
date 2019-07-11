@@ -1,5 +1,6 @@
 import urllib.parse as up
 import psycopg2
+import json
 
 up.uses_netloc.append("postgres")
 url = up.urlparse('postgres://zkynsogs:Mtak9HA6-oV5shMzPjZzd-4ZjiYAsVnv@balarama.db.elephantsql.com:5432/zkynsogs')
@@ -38,3 +39,13 @@ def read_from_db(quantity='all'):
     if quantity == 'all':
         return record
     return record[-quantity:]
+
+
+def write_user_to_db(user):
+    cursor = connection.cursor()
+    query = """INSERT INTO users(name,user_agent,cookies) VALUES \
+                (%s,%s,%s);"""
+    for i in user.cookies._cookies:
+        print(i)
+    cursor.execute(query, (user.name, user.agent['User-Agent'], json.dumps(str(user.cookies))))
+    connection.commit()

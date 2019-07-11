@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
+from user import User
 
 from random import choice, uniform
 
@@ -13,7 +14,8 @@ class EngineParser:
         # Set engine
         self.ENGINE = engine.lower()
 
-    def __fetch_results(self, query, number, language_code, user_agent=None, proxy=None, timeout=5):
+    def __fetch_results(self, query, number, language_code, user_agent=None, proxy=None, timeout=5, user=None):
+
         url = ''
 
         # preparation of request link
@@ -24,14 +26,21 @@ class EngineParser:
         elif self.ENGINE == 'yahoo':
             url = 'https://search.yahoo.com/search?p={}&n={}&ei=UTF-8'.format(query,number)
 
-        # get page with timeout = 5sec (for imitation user activity)
-        response = requests.get(url, headers=user_agent, proxies=proxy)#, timeout=timeout)
+        if not user:
+            # get page with timeout = 5sec (for imitation user activity)
+            response = requests.get(url, headers=user_agent, proxies=proxy)#, timeout=timeout)
+        else:
+            session = requests.Session()
+            session.cookies = user.cookies
+            response = session.get(url, headers=user.agent, proxies=proxy)
+            user.cookies = session.cookies
+            #print('User.name = {}\nUser.user_agent = {}\nUser.cookies={}'.format(user.name,user.user_agent,user.cookies))
+            #input()
 
         # error checking
         response.raise_for_status()
 
         # return HTML code of page
-
         return response.text
 
     def __parse_bing_html(self, html, query):
@@ -120,10 +129,11 @@ class EngineParser:
                                           'time': datetime.now()})
 
             index += 1
-        print(found_results)
+        #print(found_results)
         return found_results
 
-    def __scrape(self, query, number, language_code, use_proxy):
+    def __scrape(self, query, number, language_code, use_proxy, user=None):
+
         # set User-Agent header
         ua = UserAgent()
         user_agent = {"User-Agent": ua.random}
@@ -142,7 +152,7 @@ class EngineParser:
         try:
             # get HTML code of some page
             html = self.__fetch_results(query=query, number=number, language_code=language_code,
-                                        user_agent=user_agent, proxy=proxy, timeout=timeout)
+                                        user_agent=user_agent, proxy=proxy, timeout=timeout, user=user)
 
             # parse results
             if self.ENGINE == 'bing':
@@ -160,14 +170,14 @@ class EngineParser:
             raise Exception("Appears to be an issue with your connection")
 
     def start_engine_scrapping(self, query, number, language_code,
-                               print_output=False, engine='google', use_proxy=False):
+                               print_output=False, engine='google', use_proxy=False, user=None):
         # set search engine
         #if engine == None:
             #self.ENGINE = 'google'
         self.ENGINE = engine.lower()
 
         # get results
-        results = self.__scrape(query=query, number=number, language_code=language_code, use_proxy=use_proxy)
+        results = self.__scrape(query=query, number=number, language_code=language_code, use_proxy=use_proxy, user=user)
 
         if print_output:
             for i in results:
