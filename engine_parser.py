@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
+from user import User
 
 from time import time, sleep
 
@@ -28,8 +29,7 @@ class EngineParser:
         # Set engine
         self.ENGINE = engine.lower()
 
-    @timer
-    def __fetch_results(self, query, number, language_code, user_agent=None, proxy=None, timeout=5.0):
+    def __fetch_results(self, query, number, language_code, user_agent=None, proxy=None, timeout=5, user: User = None):
         url = ''
 
         # preparation of request link
@@ -43,14 +43,23 @@ class EngineParser:
         # delay between requests
         sleep(timeout)
 
-        # get page with timeout = 5sec (for imitation user activity)
-        response = requests.get(url, headers=user_agent, proxies=proxy, timeout=timeout)
+        if user is None:
+            # get page with timeout = 5sec (for imitation user activity)
+            response = requests.get(url, headers=user_agent, proxies=proxy, timeout=timeout)
+        else:
+            session = requests.Session()
+            session.cookies = user.cookies
+            response = session.get(url, headers=user.agent, proxies=proxy, timeout=timeout)
+            user.cookies = session.cookies
+
+            # print('User.name = {}\nUser.user_agent = {}\nUser.cookies={}'
+            #       .format(user.name,user.user_agent,user.cookies))
+            # input()
 
         # error checking
         response.raise_for_status()
 
         # return HTML code of page
-
         return response.text
 
     def __parse_bing_html(self, html, query):
@@ -145,7 +154,7 @@ class EngineParser:
         # print(found_results)
         return found_results
 
-    def __scrape(self, query, number, language_code, use_proxy, timeout_range):
+    def __scrape(self, query, number, language_code, use_proxy, timeout_range, user=None):
         # set User-Agent header
         ua = UserAgent()
         user_agent = {"User-Agent": ua.random}
@@ -164,7 +173,7 @@ class EngineParser:
         try:
             # get HTML code of some page
             html = self.__fetch_results(query=query, number=number, language_code=language_code,
-                                        user_agent=user_agent, proxy=proxy, timeout=timeout)
+                                        user_agent=user_agent, proxy=proxy, timeout=timeout, user=user)
 
             # parse results
             if self.ENGINE == 'bing':
@@ -181,9 +190,13 @@ class EngineParser:
         except requests.RequestException:
             raise Exception("Appears to be an issue with your connection")
 
-    def start_engine_scrapping(self, query, number=10, language_code='ru',
-                               print_output=False, engine='google', use_proxy=False,
-                               timeout_range=(3, 5)):
+    def start_engine_scrapping(self, query: str, number: int = 10,
+                               language_code: str = 'ru',
+                               engine: str = 'google',
+                               timeout_range=(3, 5),
+                               print_output: bool = False,
+                               use_proxy: bool = False,
+                               user: User = None):
         # set search engine
         self.ENGINE = engine.lower()
 
@@ -191,6 +204,7 @@ class EngineParser:
         results = self.__scrape(query=query, number=number,
                                 language_code=language_code,
                                 use_proxy=use_proxy,
+                                user=user,
                                 timeout_range=timeout_range)
 
         if print_output:
