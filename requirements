@@ -3,3 +3,4 @@ beautifulsoup4
 lxml
 psycopg2-binary
 fake_useragent
+aiohttp
