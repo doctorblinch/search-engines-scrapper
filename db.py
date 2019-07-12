@@ -1,6 +1,6 @@
 import urllib.parse as up
 import psycopg2
-import json
+import pickle
 
 up.uses_netloc.append("postgres")
 url = up.urlparse('postgres://zkynsogs:Mtak9HA6-oV5shMzPjZzd-4ZjiYAsVnv@balarama.db.elephantsql.com:5432/zkynsogs')
@@ -47,5 +47,14 @@ def write_user_to_db(user):
                 (%s,%s,%s);"""
     for i in user.cookies._cookies:
         print(i)
-    cursor.execute(query, (user.name, user.agent['User-Agent'], json.dumps(str(user.cookies))))
+    cursor.execute(query, (user.name, user.agent['User-Agent'], pickle.dumps(user.cookies)))
     connection.commit()
+
+'''
+def read_user_from_db(quantity='all')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users;")
+    users = cursor.fetchall()
+    if quantity == 'all':
+        return 0
+'''
