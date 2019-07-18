@@ -43,6 +43,8 @@ class EngineParserAsync:
             url = 'https://www.google.com/search?q={}&num={}&hl={}'.format(query, number, language_code)
         elif engine == 'yahoo':
             url = 'https://search.yahoo.com/search?p={}&n={}&ei=UTF-8'.format(query, number)
+        elif engine == 'youtube':
+            url = 'https://www.youtube.com/results?search_query={}'.format(query)
 
         # get page with timeout (for imitation user activity)
         async with session.get(url, headers=user.agent, timeout=timeout, proxy=proxy) as response:
@@ -91,6 +93,35 @@ class EngineParserAsync:
                                           'engine': engine})
                     index += 1
         return found_results
+
+    def __parse_youtube_html(self, html, query, engine):
+        soup = BeautifulSoup(html, 'lxml')
+
+        print(query,html)
+        found_results = []
+        index = 1
+        result_block = soup.find_all('div', attrs={'class': 'yt-lockup-content'})
+        for result in result_block:
+
+            link = result.find('a', href=True)
+            title = result.find('h3')
+            description = result.find('style-scope ytd-video-renderer')
+            if link and title:
+                link = link['href']
+                title = title.get_text().strip()
+                split = link.split('/url?url=')
+                # print(link)
+                if description:
+                    description = description.get_text().strip()
+                if link != '#' and description is not None:
+                    found_results.append({'index': index, 'query': query,
+                                          'link': link, 'title': title,
+                                          'description': description,
+                                          'time': datetime.now(),
+                                          'engine': engine})
+                    index += 1
+        return found_results
+
 
     def __parse_google_html(self, html, query, engine):
         # print('---------------' + self.ENGINE)
@@ -183,6 +214,8 @@ class EngineParserAsync:
                 return self.__parse_google_html(html=html, query=query, engine=engine)
             elif engine == 'yahoo':
                 return self.__parse_yahoo_html(html=html, query=query, engine=engine)
+            elif engine == 'youtube':
+                return self.__parse_youtube_html(html=html, query=query, engine=engine)
 
         except AssertionError:
             raise Exception("Incorrect arguments parsed to function")

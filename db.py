@@ -55,6 +55,17 @@ def write_user_to_db(user):
 
     print("-Cookies successfully inserted in PostgreSQL\n")
 
+def write_cookies_to_file(user, file_name=None):
+    if file_name == None:
+        file_name = user.name + '.cookies'
+    with open(file_name, 'wb') as f:
+        pickle.dump(user.cookies, f)
+
+def read_cookies_from_file(file_name):
+    with open(file_name, 'rb') as f:
+        cookies_data = pickle.load(f)
+    return cookies_data
+
 '''
 def read_user_from_db(quantity='all')
     cursor = connection.cursor()

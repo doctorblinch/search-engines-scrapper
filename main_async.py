@@ -4,12 +4,12 @@ import asyncio
 import aiohttp
 from user_async import UserAsync
 
-from db_async import write_to_db, write_user_to_db
+from db_async import write_to_db, write_user_to_db, write_cookies_to_file, read_cookies_from_file
 
 
 all_results = []
 bot = UserAsync(name='TestBot')
-
+bot.cookies = read_cookies_from_file('Trump_Republic')
 
 async def main():
     tasks = []
@@ -17,8 +17,10 @@ async def main():
 
     engine_parser = EngineParserAsync()
 
-    requests = ['Автосалон', 'Салон красоты', 'Новости']
-    engines = ['Google', 'Bing']
+    #requests = ["stop Trump campaign", "Democrat party" , "Democrat party primaries"]
+    #requests = ["President Trump", "Republican party", "‎Mike Pence"]
+    requests = ['Mexican wall']
+    engines = ['Youtube']
     # engines = ['Google', 'Bing', 'Yahoo']
 
     async with aiohttp.ClientSession() as session:
@@ -40,7 +42,7 @@ if __name__ == '__main__':
 
     write_to_db(all_results)
     write_user_to_db(bot)
-
+    write_cookies_to_file(bot, 'Trump_Republic')
     print('\n\nTIME:', time() - start)
 
     # print(all_results)

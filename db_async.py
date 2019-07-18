@@ -43,11 +43,13 @@ def write_to_db(result, engine=''):
     cursor = connection.cursor()
     for res in result:
         for element in res:
+#            print(len(element['description']))
             query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
                            (%s, %s, %s, %s, %s, %s, %s);"""
             cursor.execute(query, (element['index'], element['query'],
                                    element['link'], element['title'],
-                                   element['description'], element['time'],
+                                   element['description'],
+                                   element['time'],
                                    element['engine']))
             # cursor.execute(query)
     connection.commit()
@@ -71,3 +73,14 @@ def write_user_to_db(user):
     connection.commit()
 
     print("-Cookies successfully inserted in PostgreSQL\n")
+
+def write_cookies_to_file(user, file_name=None):
+    if file_name == None:
+        file_name = user.name + '.cookies'
+    with open(file_name, 'wb') as f:
+        pickle.dump(user.cookies, f)
+
+def read_cookies_from_file(file_name):
+    with open(file_name, 'rb') as f:
+        cookies_data = pickle.load(f)
+    return cookies_data
