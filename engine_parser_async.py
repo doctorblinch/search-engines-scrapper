@@ -13,8 +13,6 @@ from random import choice, uniform
 
 import sys
 
-import re
-
 
 def timer(func):
     async def wrapper(self, *args, **kwargs):
