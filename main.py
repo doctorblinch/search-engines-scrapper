@@ -6,7 +6,7 @@ from time import time
 
 requests = ['Автосалон', 'Салон красоты', 'Новости']
 engine_parser = EngineParser()
-engines = ['Google', 'Bing']
+engines = ['Google', 'Bing', 'Youtube']
 
 num_of_links = 10
 

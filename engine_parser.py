@@ -39,6 +39,8 @@ class EngineParser:
             url = 'https://www.google.com/search?q={}&num={}&hl={}'.format(query, number, language_code)
         elif self.ENGINE == 'yahoo':
             url = 'https://search.yahoo.com/search?p={}&n={}&ei=UTF-8'.format(query, number)
+        elif self.ENGINE == 'youtube':
+            url = 'https://www.youtube.com/results?search_query={}'.format(query)
 
         # delay between requests
         sleep(timeout)
@@ -90,6 +92,39 @@ class EngineParser:
                                           'time': datetime.now(),
                                           'engine': self.ENGINE})
                     index += 1
+        return found_results
+
+    def __parse_youtube_html(self, html, query):
+        soup = BeautifulSoup(html, 'lxml')
+
+        found_results = []
+        index = 1
+        result_block = soup.findAll('div', attrs={'class': 'yt-lockup-content'})
+        # print('Url= ', result_block)
+        # input()
+
+        for result in result_block:
+
+            link = result.find('a', href=True)
+            title = link['title']
+            description = result.find('div', attrs={'class': 'yt-lockup-description'})
+            # print('Link = ',link, '\ntitle = ', title, '\ndescription=', description)
+            if link and title:
+                link = link['href']
+                title = title.strip()
+                if 'https://www.youtube.com' not in link:
+                    link = 'https://www.youtube.com' + link
+                if description:
+                    description = description.get_text().strip()
+                if link != '#' and description is not None:
+                    found_results.append({'index': index, 'query': query,
+                                          'link': link, 'title': title,
+                                          'description': description,
+                                          'time': datetime.now(),
+                                          'engine': self.ENGINE})
+
+            index += 1
+        # print(found_results)
         return found_results
 
     def __parse_google_html(self, html, query):
@@ -182,6 +217,8 @@ class EngineParser:
                 return self.__parse_google_html(html=html, query=query)
             elif self.ENGINE == 'yahoo':
                 return self.__parse_yahoo_html(html=html, query=query)
+            elif self.ENGINE == 'youtube':
+                return self.__parse_youtube_html(html=html, query=query)
 
         except AssertionError:
             raise Exception("Incorrect arguments parsed to function")

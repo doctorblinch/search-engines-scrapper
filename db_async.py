@@ -18,19 +18,14 @@ connection = psycopg2.connect(database=url.path[1:],
                               host=url.hostname,
                               port=url.port)
 
-'''
-from sqlalchemy import create_engine
-engine = create_engine(, echo=True)
-engine.execute('SELECT * FROM users')
-'''
-
 
 def write_to_db(result, engine=''):
     # async with aiopg.create_pool(dsn) as pool:
     #     async with pool.acquire() as conn:
     #         async with conn.cursor() as cur:
     #             for element in result:
-    #                 query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
+    #                 query = """INSERT INTO scrapes(index, query,\
+    #                 link, title, description, time, search_engine) VALUES \
     #                               (%s, %s, %s, %s, %s, %s, %s);"""
     #                 await cur.execute(query, (element['index'], element['query'],
     #                                           element['link'], element['title'],
@@ -43,7 +38,10 @@ def write_to_db(result, engine=''):
     cursor = connection.cursor()
     for res in result:
         for element in res:
-#            print(len(element['description']))
+            # print(len(element['description']))
+            # print(len(element['link']))
+            # print(len(element['title']))
+            # print()
             query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
                            (%s, %s, %s, %s, %s, %s, %s);"""
             cursor.execute(query, (element['index'], element['query'],
@@ -51,7 +49,6 @@ def write_to_db(result, engine=''):
                                    element['description'],
                                    element['time'],
                                    element['engine']))
-            # cursor.execute(query)
     connection.commit()
     print("-Elements successfully inserted in PostgreSQL\n")
 
@@ -74,11 +71,13 @@ def write_user_to_db(user):
 
     print("-Cookies successfully inserted in PostgreSQL\n")
 
+
 def write_cookies_to_file(user, file_name=None):
-    if file_name == None:
+    if file_name is None:
         file_name = user.name + '.cookies'
     with open(file_name, 'wb') as f:
         pickle.dump(user.cookies, f)
+
 
 def read_cookies_from_file(file_name):
     with open(file_name, 'rb') as f:

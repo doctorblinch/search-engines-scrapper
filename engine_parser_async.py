@@ -13,6 +13,8 @@ from random import choice, uniform
 
 import sys
 
+import re
+
 
 def timer(func):
     async def wrapper(self, *args, **kwargs):
@@ -97,20 +99,23 @@ class EngineParserAsync:
     def __parse_youtube_html(self, html, query, engine):
         soup = BeautifulSoup(html, 'lxml')
 
-        print(query,html)
         found_results = []
         index = 1
-        result_block = soup.find_all('div', attrs={'class': 'yt-lockup-content'})
+        result_block = soup.findAll('div', attrs={'class': 'yt-lockup-content'})
+        # print('Url= ', result_block)
+        # input()
+
         for result in result_block:
 
             link = result.find('a', href=True)
-            title = result.find('h3')
-            description = result.find('style-scope ytd-video-renderer')
+            title = link['title']
+            description = result.find('div', attrs={'class': 'yt-lockup-description'})
+            # print('Link = ',link, '\ntitle = ', title, '\ndescription=', description)
             if link and title:
                 link = link['href']
-                title = title.get_text().strip()
-                split = link.split('/url?url=')
-                # print(link)
+                title = title.strip()
+                if 'https://www.youtube.com' not in link:
+                    link = 'https://www.youtube.com' + link
                 if description:
                     description = description.get_text().strip()
                 if link != '#' and description is not None:
@@ -119,9 +124,10 @@ class EngineParserAsync:
                                           'description': description,
                                           'time': datetime.now(),
                                           'engine': engine})
-                    index += 1
-        return found_results
 
+            index += 1
+        # print(found_results)
+        return found_results
 
     def __parse_google_html(self, html, query, engine):
         # print('---------------' + self.ENGINE)

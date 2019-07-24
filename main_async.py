@@ -11,16 +11,17 @@ all_results = []
 bot = UserAsync(name='TestBot')
 bot.cookies = read_cookies_from_file('Trump_Republic')
 
+
 async def main():
     tasks = []
     num_of_links = 10
 
     engine_parser = EngineParserAsync()
 
-    #requests = ["stop Trump campaign", "Democrat party" , "Democrat party primaries"]
-    #requests = ["President Trump", "Republican party", "‎Mike Pence"]
-    requests = ['Mexican wall']
-    engines = ['Youtube']
+    # requests = ["stop Trump campaign", "Democrat party" , "Democrat party primaries"]
+    requests = ["President Trump", "Republican party", "‎Mike Pence"]
+    # requests = ['Mexican wall']
+    engines = ['Google', 'Bing', 'Youtube']
     # engines = ['Google', 'Bing', 'Yahoo']
 
     async with aiohttp.ClientSession() as session:
