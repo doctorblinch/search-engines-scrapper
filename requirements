@@ -1,4 +1,6 @@
 requests
 beautifulsoup4
 lxml
-psycopg2
+psycopg2-binary
+fake_useragent
+aiohttp

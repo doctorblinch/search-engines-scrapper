@@ -2,20 +2,25 @@ import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
-from user import User
 
-from time import time, sleep
+from user_async import UserAsync
+
+from time import time
+import asyncio
+import aiohttp
 
 from random import choice, uniform
 
 import sys
 
+import re
+
 
 def timer(func):
-    def wrapper(self, *args, **kwargs):
+    async def wrapper(self, *args, **kwargs):
         start = time()
-        res = func(self, *args, **kwargs)
-        print('({}) Function {} ---> {} sec'.format(self.ENGINE, func.__name__, time() - start))
+        res = await func(self, *args, **kwargs)
+        print('({}) Function {} ---> {} sec'.format(kwargs['engine'], func.__name__, time() - start))
         if func.__name__ == '__fetch_results':
             print('Timeout:', kwargs['timeout'])
         print()
@@ -24,47 +29,44 @@ def timer(func):
     return wrapper
 
 
-class EngineParser:
-    def __init__(self, engine='google'):
-        # Set engine
-        self.ENGINE = engine.lower()
+class EngineParserAsync:
+    def __init__(self):
+        pass
 
-    def __fetch_results(self, query, number, language_code, user_agent=None, proxy=None, timeout=5, user: User = None):
+    # @timer
+    async def __fetch_results(self, query, number, language_code, user_agent=None, user: UserAsync = None,
+                              proxy=None, timeout=5.0, session: aiohttp.client.ClientSession = None, engine='google'):
         url = ''
 
         # preparation of request link
-        if self.ENGINE == 'bing':
+        if engine == 'bing':
             url = 'https://www.bing.com/search?q={}&count={}'.format(query, number)
-        elif self.ENGINE == 'google':
+        elif engine == 'google':
             url = 'https://www.google.com/search?q={}&num={}&hl={}'.format(query, number, language_code)
-        elif self.ENGINE == 'yahoo':
+        elif engine == 'yahoo':
             url = 'https://search.yahoo.com/search?p={}&n={}&ei=UTF-8'.format(query, number)
-        elif self.ENGINE == 'youtube':
+        elif engine == 'youtube':
             url = 'https://www.youtube.com/results?search_query={}'.format(query)
 
-        # delay between requests
-        sleep(timeout)
+        # get page with timeout (for imitation user activity)
+        async with session.get(url, headers=user.agent, timeout=timeout, proxy=proxy) as response:
+            # error checking
+            if response.status != 200:
+                response.raise_for_status()
 
-        if user is None:
-            # get page with timeout = 5sec (for imitation user activity)
-            response = requests.get(url, headers=user_agent, proxies=proxy, timeout=timeout)
-        else:
-            session = requests.Session()
-            session.cookies = user.cookies
-            response = session.get(url, headers=user.agent, proxies=proxy, timeout=timeout)
-            user.cookies = session.cookies
+            # get HTML code of page
+            data = await response.text()
 
-            # print('User.name = {}\nUser.user_agent = {}\nUser.cookies={}'
-            #       .format(user.name,user.user_agent,user.cookies))
-            # input()
+            # get cookies
+            user.cookies = session._cookie_jar._cookies
 
-        # error checking
-        response.raise_for_status()
+            # delay between requests
+            # await asyncio.sleep(timeout)
 
-        # return HTML code of page
-        return response.text
+            # return HTML code of page
+            return data
 
-    def __parse_bing_html(self, html, query):
+    def __parse_bing_html(self, html, query, engine):
         # print('---------------' + self.ENGINE)
         soup = BeautifulSoup(html, 'lxml')
 
@@ -90,11 +92,11 @@ class EngineParser:
                                           'link': link, 'title': title,
                                           'description': description,
                                           'time': datetime.now(),
-                                          'engine': self.ENGINE})
+                                          'engine': engine})
                     index += 1
         return found_results
 
-    def __parse_youtube_html(self, html, query):
+    def __parse_youtube_html(self, html, query, engine):
         soup = BeautifulSoup(html, 'lxml')
 
         found_results = []
@@ -121,13 +123,13 @@ class EngineParser:
                                           'link': link, 'title': title,
                                           'description': description,
                                           'time': datetime.now(),
-                                          'engine': self.ENGINE})
+                                          'engine': engine})
 
             index += 1
         # print(found_results)
         return found_results
 
-    def __parse_google_html(self, html, query):
+    def __parse_google_html(self, html, query, engine):
         # print('---------------' + self.ENGINE)
         soup = BeautifulSoup(html, 'lxml')
 
@@ -153,11 +155,11 @@ class EngineParser:
                                           'link': link, 'title': title,
                                           'description': description,
                                           'time': datetime.now(),
-                                          'engine': self.ENGINE})
+                                          'engine': engine})
                     index += 1
         return found_results
 
-    def __parse_yahoo_html(self, html, query):
+    def __parse_yahoo_html(self, html, query, engine):
         soup = BeautifulSoup(html, 'lxml')
 
         found_results = []
@@ -183,13 +185,13 @@ class EngineParser:
                                           'link': link, 'title': title,
                                           'description': description,
                                           'time': datetime.now(),
-                                          'engine': self.ENGINE})
+                                          'engine': engine})
 
             index += 1
         # print(found_results)
         return found_results
 
-    def __scrape(self, query, number, language_code, use_proxy, timeout_range, user=None):
+    async def __scrape(self, query, number, language_code, use_proxy, timeout_range, session, user, engine):
         # set User-Agent header
         ua = UserAgent()
         user_agent = {"User-Agent": ua.random}
@@ -198,7 +200,7 @@ class EngineParser:
         if use_proxy:
             with open('proxies.txt') as file:
                 proxies = file.read().split('\n')
-                proxy = {'http': 'http://' + choice(proxies)}
+                proxy = 'http://' + choice(proxies)
         else:
             proxy = None
 
@@ -207,45 +209,45 @@ class EngineParser:
 
         try:
             # get HTML code of some page
-            html = self.__fetch_results(query=query, number=number, language_code=language_code,
-                                        user_agent=user_agent, proxy=proxy, timeout=timeout, user=user)
+            html = await self.__fetch_results(query=query, number=number, language_code=language_code, engine=engine,
+                                              user_agent=user_agent, proxy=proxy, timeout=timeout, session=session,
+                                              user=user)
 
             # parse results
-            if self.ENGINE == 'bing':
-                return self.__parse_bing_html(html=html, query=query)
-            elif self.ENGINE == 'google':
-                return self.__parse_google_html(html=html, query=query)
-            elif self.ENGINE == 'yahoo':
-                return self.__parse_yahoo_html(html=html, query=query)
-            elif self.ENGINE == 'youtube':
-                return self.__parse_youtube_html(html=html, query=query)
+            if engine == 'bing':
+                return self.__parse_bing_html(html=html, query=query, engine=engine)
+            elif engine == 'google':
+                return self.__parse_google_html(html=html, query=query, engine=engine)
+            elif engine == 'yahoo':
+                return self.__parse_yahoo_html(html=html, query=query, engine=engine)
+            elif engine == 'youtube':
+                return self.__parse_youtube_html(html=html, query=query, engine=engine)
 
         except AssertionError:
             raise Exception("Incorrect arguments parsed to function")
         except requests.HTTPError:
-            raise Exception("You appear to have been blocked by {}".format(self.ENGINE))
+            raise Exception("You appear to have been blocked by {}".format(engine))
         except requests.RequestException:
             raise Exception("Appears to be an issue with your connection")
 
-    def start_engine_scrapping(self, query: str, number: int = 10,
-                               language_code: str = 'ru',
-                               engine: str = 'google',
-                               timeout_range=(3, 5),
-                               print_output: bool = False,
-                               use_proxy: bool = False,
-                               user: User = None):
+    async def start_engine_scrapping(self, query, number=10, language_code='ru', user=None,
+                                     print_output=False, engine='google', use_proxy=False,
+                                     timeout_range=(3, 5), session=None, all_results=[]):
         # set search engine
-        self.ENGINE = engine.lower()
+        engine = engine.lower()
 
         # get results
-        results = self.__scrape(query=query, number=number,
-                                language_code=language_code,
-                                use_proxy=use_proxy,
-                                user=user,
-                                timeout_range=timeout_range)
+        results = await self.__scrape(query=query, number=number,
+                                      language_code=language_code,
+                                      use_proxy=use_proxy, user=user,
+                                      timeout_range=timeout_range,
+                                      session=session, engine=engine)
+
+        all_results.append(results)
+        # await write_to_db(results, engine)
 
         if print_output:
-            print('---------------{}---------------'.format(self.ENGINE))
+            print('---------------{}(len={})---------------'.format(engine, len(results)))
             for res in results:
                 for key in res.keys():
                     if key == 'index':
@@ -254,8 +256,6 @@ class EngineParser:
                         print('\t' + key + ': ' + str(res[key]))
                 print()
             print('---------------END---------------\n')
-
-        return results
 
 
 if '__main__' == __name__:
@@ -269,8 +269,8 @@ if '__main__' == __name__:
     How to run this script? (example):
         python main.py "право постійного користування земельною ділянкою" 3 ru
     """
-    engine_parser = EngineParser('Google')
+    engine_parser = EngineParserAsync()
     engine_parser.start_engine_scrapping(query=sys.argv[1], number=int(sys.argv[2]),
                                          language_code=sys.argv[3], print_output=True,
-                                         use_proxy=True, engine=engine_parser.ENGINE,
+                                         use_proxy=True, engine='google',
                                          timeout_range=(3, 5))
