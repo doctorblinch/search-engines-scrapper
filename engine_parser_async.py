@@ -195,7 +195,7 @@ class EngineParserAsync:
         if which_links == 'all':
             urls_dict = links
         elif which_links == 'random':
-            urls_dict = links[:3] + [choose(urls[3:-1]) for _ in range(0, randint(len(links) // 3))]
+            urls_dict = links[:3] + [choice(links[3:-1]) for _ in range(0, randint(0,len(links) // 3))]
 
         for url in urls_dict:
             # print(url, type(url))
@@ -273,7 +273,7 @@ class EngineParserAsync:
 
         cook = user.cookies
         try:
-            await self.__go_to_links(links=results, user=user, session=session, timeout_range=timeout_range)
+            await self.__go_to_links(links=results, user=user, session=session, timeout_range=timeout_range, which_links='random')
         except Exception as e:
             print('!!!!!Lovit', e)
         # await write_to_db(results, engine)

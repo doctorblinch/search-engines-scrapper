@@ -8,7 +8,7 @@ from db_async import write_to_db, write_user_to_db, write_cookies_to_file, read_
 
 
 all_results = []
-bot = UserAsync(name='Bot with going to other links Zelenskyi')
+bot = UserAsync(name='Bot Kid')
 #bot.cookies = read_cookies_from_file('')
 
 
@@ -29,8 +29,8 @@ async def sub_task(engine, session):
     engine_parser = EngineParserAsync()
     num_of_links = 10
 
-    # requests = ["Путин", "Единая Россия" , "Выборы в России", "Новости Соловьев", "Раша тудей"]
-    requests = ["Зеленский", "Слуга народа", "Выборы в Украине", "Мажоритарка", "Зе команда"]
+    requests = ["Мультики", "Игрушки" , "Лунтик", "Лего", "Игры для детей", "Магазин игрушек",
+     "Сказка", "Хот вилс", "Игрушки машинки", "История Игрушек", "Машинка на радиоуправлении", "купить машинку на радиоуправлении"]
     # requests = ["Зеленский"]
     # requests = ['Mexican wall']
 
@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     write_to_db(all_results)
     write_user_to_db(bot)
-    write_cookies_to_file(bot, 'data/Russian.cookies')
+    write_cookies_to_file(bot, 'data/Kid_auto.cookies')
     print('\n\nTIME:', time() - start)
 
     # print(all_results)
