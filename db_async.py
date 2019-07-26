@@ -42,6 +42,8 @@ def write_to_db(result, engine=''):
             # print(len(element['link']))
             # print(len(element['title']))
             # print()
+            if len(element['description']) >= 8192:
+                element['description'] = element['description'][:8191]
             query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
                            (%s, %s, %s, %s, %s, %s, %s);"""
             cursor.execute(query, (element['index'], element['query'],
@@ -66,7 +68,7 @@ def write_user_to_db(user):
     cursor = connection.cursor()
     query = """INSERT INTO users(name, user_agent,cookies) VALUES \
                 (%s, %s, %s);"""
-    cursor.execute(query, (user.name, user.agent['User-Agent'], pickle.dumps(user.cookies)))
+    cursor.execute(query, (user.name, user.agent['User-Agent'], user.file_name))# pickle.dumps(user.cookies)))
     connection.commit()
 
     print("-Cookies successfully inserted in PostgreSQL\n")

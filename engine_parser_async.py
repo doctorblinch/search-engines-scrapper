@@ -5,11 +5,12 @@ from datetime import datetime
 
 from user_async import UserAsync
 
-from time import time
+from time import time, sleep
 import asyncio
 import aiohttp
+import ssl
 
-from random import choice, uniform
+from random import choice, uniform, randint
 
 import sys
 
@@ -59,7 +60,8 @@ class EngineParserAsync:
             user.cookies = session._cookie_jar._cookies
 
             # delay between requests
-            # await asyncio.sleep(timeout)
+            await asyncio.sleep(timeout)
+            # sleep(timeout)
 
             # return HTML code of page
             return data
@@ -189,6 +191,29 @@ class EngineParserAsync:
         # print(found_results)
         return found_results
 
+    async def __go_to_links(self, links, user, session, timeout_range, which_links='all'):
+        if which_links == 'all':
+            urls_dict = links
+        elif which_links == 'random':
+            urls_dict = links[:3] + [choose(urls[3:-1]) for _ in range(0, randint(len(links) // 3))]
+
+        for url in urls_dict:
+            # print(url, type(url))
+            # sleep(uniform(*timeout_range))
+            timeout = uniform(*timeout_range)
+            await asyncio.sleep(timeout)
+            # ssl_context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
+            try:
+                async with session.get(url['link'], headers=user.agent, timeout=timeout) as response:
+                    if response.status != 200:
+                        response.raise_for_status()
+
+                    # get cookies
+                    user.cookies = session._cookie_jar._cookies
+                print('Go to {} link  -- engine = {}.'.format(url['link'], url['engine']))
+            except:
+                print('{} link was blocked -- engine = {}.'.format(url['link'], url['engine']))
+
     async def __scrape(self, query, number, language_code, use_proxy, timeout_range, session, user, engine):
         # set User-Agent header
         ua = UserAgent()
@@ -242,7 +267,20 @@ class EngineParserAsync:
                                       session=session, engine=engine)
 
         all_results.append(results)
+        links = []
+        for res in results:
+            links.append(res['link'])
+
+        cook = user.cookies
+        try:
+            await self.__go_to_links(links=results, user=user, session=session, timeout_range=timeout_range)
+        except Exception as e:
+            print('!!!!!Lovit', e)
         # await write_to_db(results, engine)
+        #print(cook)
+        #input()
+        #print(user.cookies)
+        #input()
 
         if print_output:
             print('---------------{}(len={})---------------'.format(engine, len(results)))
