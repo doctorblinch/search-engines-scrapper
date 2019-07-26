@@ -81,7 +81,7 @@ def read_user_from_db(id=None, name=None):
     record = cursor.fetchone()
 
     user = UserAsync(record[1])
-    user.agent = record[2]
+    user.agent = {'User-Agent': record[2]}
     user.cookies = read_cookies_from_file('data/' + record[3])
 
     return user
@@ -89,7 +89,7 @@ def read_user_from_db(id=None, name=None):
 
 def write_user_to_db(user):
     cursor = connection.cursor()
-    query = """INSERT INTO users(name, user_agent,cookies) VALUES \
+    query = """INSERT INTO users(name, user_agent, cookies) VALUES \
                 (%s, %s, %s);"""
     cursor.execute(query, (user.name, user.agent['User-Agent'], user.file_name))
     connection.commit()
