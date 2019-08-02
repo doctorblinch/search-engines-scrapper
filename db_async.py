@@ -2,6 +2,8 @@ import urllib.parse as up
 import psycopg2
 import pickle
 
+from user_async import UserAsync
+
 # import asyncio
 # import aiopg
 
@@ -42,6 +44,8 @@ def write_to_db(result, engine=''):
             # print(len(element['link']))
             # print(len(element['title']))
             # print()
+            if len(element['description']) >= 8192:
+                element['description'] = element['description'][:8191]
             query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
                            (%s, %s, %s, %s, %s, %s, %s);"""
             cursor.execute(query, (element['index'], element['query'],
@@ -62,14 +66,35 @@ def read_from_db(quantity='all'):
     return record[-quantity:]
 
 
+def read_user_from_db(id=None, name=None):
+    cursor = connection.cursor()
+
+    if id is not None:
+        query = f"SELECT * FROM users WHERE (id = \'{id}\') ORDER BY id DESC LIMIT 1"
+        cursor.execute(query)
+    elif name is not None:
+        query = f"SELECT * FROM users WHERE (name LIKE \'{name}\') ORDER BY id DESC LIMIT 1"
+        cursor.execute(query)
+    else:
+        return
+
+    record = cursor.fetchone()
+
+    user = UserAsync(record[1])
+    user.agent = {'User-Agent': record[2]}
+    user.cookies = read_cookies_from_file('data/' + record[3])
+
+    return user
+
+
 def write_user_to_db(user):
     cursor = connection.cursor()
-    query = """INSERT INTO users(name, user_agent,cookies) VALUES \
+    query = """INSERT INTO users(name, user_agent, cookies) VALUES \
                 (%s, %s, %s);"""
-    cursor.execute(query, (user.name, user.agent['User-Agent'], pickle.dumps(user.cookies)))
+    cursor.execute(query, (user.name, user.agent['User-Agent'], user.file_name))
     connection.commit()
 
-    print("-Cookies successfully inserted in PostgreSQL\n")
+    print("-User successfully inserted in PostgreSQL\n")
 
 
 def write_cookies_to_file(user, file_name=None):
