@@ -45,6 +45,8 @@ def write_to_db(result, engine='', user=None):
     else:
         id = 1
 
+        print(type(id), id)
+
     cursor = connection.cursor()
     for res in result:
         for element in res:
@@ -55,7 +57,7 @@ def write_to_db(result, engine='', user=None):
             if len(element['description']) >= 8192:
                 element['description'] = element['description'][:8191]
             query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine, user_id) VALUES \
-                           (%s, %s, %s, %s, %s, %s, %s);"""
+                           (%s, %s, %s, %s, %s, %s, %s, %s);"""
             cursor.execute(query, (element['index'], element['query'],
                                    element['link'], element['title'],
                                    element['description'],

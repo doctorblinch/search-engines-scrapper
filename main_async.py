@@ -55,7 +55,7 @@ async def sub_task(engine, session):
         await engine_parser.start_engine_scrapping(request, number=num_of_links, user=bot,
                                                    language_code='ru', engine=engine,
                                                    use_proxy=False, timeout_range=(3, 6),
-                                                   print_output=True, session=session,
+                                                   print_output=False, session=session,
                                                    all_results=all_results)
 
 
@@ -66,8 +66,8 @@ if __name__ == '__main__':
 
     asyncio.run(main())
 
-    write_to_db(all_results, user=bot)
     write_user_to_db(bot)
+    write_to_db(all_results, user=bot)
     # write_cookies_to_file(bot,  + bot.file_name)
     print('\n\nTIME:', time() - start)
 
