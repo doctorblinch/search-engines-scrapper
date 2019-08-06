@@ -5,10 +5,9 @@ from datetime import datetime
 
 from user_async import UserAsync
 
-from time import time, sleep
+from time import time
 import asyncio
 import aiohttp
-import ssl
 
 from random import choice, uniform, randint
 
@@ -57,7 +56,8 @@ class EngineParserAsync:
             data = await response.text()
 
             # get cookies
-            user.cookies = session._cookie_jar._cookies
+            user.cookies = session.cookie_jar
+            # user.cookies = session._cookie_jar._cookies
 
             # delay between requests
             await asyncio.sleep(timeout)
@@ -195,7 +195,8 @@ class EngineParserAsync:
         if which_links == 'all':
             urls_dict = links
         elif which_links == 'random':
-            urls_dict = links[:3] + [choice(links[3:-1]) for _ in range(0, randint(0,len(links) // 3))]
+            urls_dict = links[:3] + [choice(links[3:-1]) for _ in range(0, randint(0, len(links) // 3))]
+            print(f'len = {len(urls_dict)}')
 
         for url in urls_dict:
             # print(url, type(url))
@@ -210,9 +211,13 @@ class EngineParserAsync:
 
                     # get cookies
                     user.cookies = session._cookie_jar._cookies
+                print()
                 print('Go to {} link  -- engine = {}.'.format(url['link'], url['engine']))
+                print()
             except:
+                print()
                 print('{} link was blocked -- engine = {}.'.format(url['link'], url['engine']))
+                print()
 
     async def __scrape(self, query, number, language_code, use_proxy, timeout_range, session, user, engine):
         # set User-Agent header
@@ -271,16 +276,18 @@ class EngineParserAsync:
         for res in results:
             links.append(res['link'])
 
-        cook = user.cookies
-        try:
-            await self.__go_to_links(links=results, user=user, session=session, timeout_range=timeout_range, which_links='random')
-        except Exception as e:
-            print('!!!!!Lovit', e)
+        # try:
+        #     await self.__go_to_links(links=results, user=user, session=session, timeout_range=timeout_range, which_links='random')
+        # except Exception as e:
+        #     print('Exception in __go_to_links')
+
+
+
         # await write_to_db(results, engine)
-        #print(cook)
-        #input()
-        #print(user.cookies)
-        #input()
+        # print(cook)
+        # input()
+        # print(user.cookies)
+        # input()
 
         if print_output:
             print('---------------{}(len={})---------------'.format(engine, len(results)))
