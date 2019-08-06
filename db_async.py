@@ -2,6 +2,7 @@ import urllib.parse as up
 import psycopg2
 import pickle
 import aiohttp
+import asyncio
 import os.path
 
 from user_async import UserAsync
@@ -137,8 +138,3 @@ def read_cookies_from_file(file_name=None, user=None):
     asyncio.set_event_loop(loop)
     result = loop.run_until_complete(__async_read_cookies_from_file(file_name=file_name, user=user))
     return result
-
-
-import asyncio
-if __name__=='__main__':
-    print(read_cookies_from_file('Bot Kid.cookies'))
