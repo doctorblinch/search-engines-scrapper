@@ -79,14 +79,15 @@ def read_user_from_db(id=None, name=None, create_if_not_exists=False, requests=N
         query = f"SELECT * FROM users WHERE (name LIKE \'{name}\') ORDER BY id DESC LIMIT 1"
         cursor.execute(query)
     else:
-        return
+        return 'User with such parrametrs not found!'
 
     record = cursor.fetchone()
 
     if create_if_not_exists and name is not None:
-        bot = UserAsync(name=name)
+        user = UserAsync(name=name)
         if requests is not None:
-            bot.requests = requests
+            user.requests = requests
+        return user
 
 
     user = UserAsync(record[1])

@@ -12,10 +12,14 @@ from user_async import UserAsync
 all_results = []
 s = None
 
-#bot = UserAsync(name='Bot Kid')
 
-bot = read_user_from_db(name='Nolan Diagram v1 bot #1', create_if_not_exists=True)
+bot = read_user_from_db(name='Nolan Diagram v1 bot #1', create_if_not_exists=True, requests=['анархизм', 'митинги', 'нацболы', 'лимонов', 'революция', 'народная самооборона', 'путин вор',  'азат мифтахов', 'русский марш', 'антифашисты'])
 
+#bot = read_user_from_db(name='Nolan Diagram v1 bot #2', create_if_not_exists=True, requests=['голунов', 'выборы москва 2019', 'аннексия крым', 'телеканал дождь', 'медуза', 'митинги москва', 'навальный', 'эхо москвы', 'протестные акции', 'собчак'])
+
+#bot = read_user_from_db(name='Nolan Diagram v1 bot #3', create_if_not_exists=True, requests=['коммунисты', 'зюганов', 'советский союз', 'кпрф', 'армия', 'оборона страны', 'возвращение крыма', 'пенсии', 'сталин', 'шойгу'])
+
+#bot = read_user_from_db(name='Nolan Diagram v1 bot #4', create_if_not_exists=True, requests=['прямая линия с путиным', 'налоги', 'присоединение крыма', 'единая россия', 'russia today', 'первый канал', 'дмитрий киселев', 'владимир соловьев', 'программа время', 'пенсии'])
 
 
 async def main():
@@ -42,7 +46,7 @@ async def sub_task(engine, session):
     #requests = ["Мультики", "Игрушки" , "Лунтик", "Лего", "Игры для детей", "Магазин игрушек",
      #"Сказка", "Хот вилс", "Игрушки машинки", "История Игрушек", "Машинка на радиоуправлении", "купить машинку на радиоуправлении"]
 
-    if bot.requests is None
+    if bot.requests is None:
         requests = ['Машинка', 'магазин']
     else:
         requests = bot.requests
