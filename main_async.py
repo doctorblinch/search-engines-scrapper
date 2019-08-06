@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     asyncio.run(main())
 
-    write_to_db(all_results)
+    write_to_db(all_results, user=bot)
     write_user_to_db(bot)
     # write_cookies_to_file(bot,  + bot.file_name)
     print('\n\nTIME:', time() - start)

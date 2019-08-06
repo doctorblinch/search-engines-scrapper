@@ -43,7 +43,7 @@ def write_to_db(result, engine='', user=None):
     if user is not None:
         id = user.id_in_db
     else:
-        id = None
+        id = 1
 
     cursor = connection.cursor()
     for res in result:
