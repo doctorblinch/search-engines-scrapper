@@ -110,6 +110,8 @@ def read_user_from_db(id=None, name=None, create_if_not_exists=False, requests=N
 
     user = UserAsync(record[1])
     user.id_in_db = record[0]
+    if requests is not None:
+        user.requests = requests
     user.agent = {'User-Agent': record[2]}
     user.cookies = read_cookies_from_file('data/' + record[3])
 
