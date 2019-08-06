@@ -90,21 +90,23 @@ def read_user_from_db(id=None, name=None, create_if_not_exists=False, requests=N
     if id is not None:
         query = f"SELECT * FROM users WHERE (id = \'{id}\') ORDER BY id DESC LIMIT 1"
         cursor.execute(query)
+
     elif name is not None:
         query = f"SELECT * FROM users WHERE (name LIKE \'{name}\') ORDER BY id DESC LIMIT 1"
         cursor.execute(query)
     else:
         return 'User with such parrametrs not found!'
 
-    if create_if_not_exists and name is not None:
+    record = cursor.fetchone()
+
+    if create_if_not_exists and name is not None and record is None:
         user = UserAsync(name=name)
         id = get_last_user_id() + 1
         user.id_in_db = id
         if requests is not None:
             user.requests = requests
+        write_user_to_db(user)
         return user
-
-    record = cursor.fetchone()
 
     user = UserAsync(record[1])
     user.id_in_db = record[0]
