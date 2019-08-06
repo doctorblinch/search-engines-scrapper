@@ -24,7 +24,7 @@ connection = psycopg2.connect(database=url.path[1:],
                               port=url.port)
 
 
-def write_to_db(result, engine=''):
+def write_to_db(result, engine='', user=None):
     # async with aiopg.create_pool(dsn) as pool:
     #     async with pool.acquire() as conn:
     #         async with conn.cursor() as cur:
@@ -40,6 +40,11 @@ def write_to_db(result, engine=''):
     if len(result) == 0:
         return
 
+    if user is not None:
+        id = user.id_in_db
+    else:
+        id = None
+
     cursor = connection.cursor()
     for res in result:
         for element in res:
@@ -49,13 +54,14 @@ def write_to_db(result, engine=''):
             # print()
             if len(element['description']) >= 8192:
                 element['description'] = element['description'][:8191]
-            query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine) VALUES \
+            query = """INSERT INTO scrapes(index, query, link, title, description, time, search_engine, user_id) VALUES \
                            (%s, %s, %s, %s, %s, %s, %s);"""
             cursor.execute(query, (element['index'], element['query'],
                                    element['link'], element['title'],
                                    element['description'],
                                    element['time'],
-                                   element['engine']))
+                                   element['engine'],
+                                   id))
     connection.commit()
     print("-Elements successfully inserted in PostgreSQL\n")
 
@@ -67,6 +73,13 @@ def read_from_db(quantity='all'):
     if quantity == 'all':
         return record
     return record[-quantity:]
+
+def get_last_user_id():
+    cursor = connection.cursor()
+    query = f"SELECT * FROM users ORDER BY id DESC LIMIT 1"
+    cursor.execute(query)
+    record = cursor.fetchone()
+    return int(record[0])
 
 
 def read_user_from_db(id=None, name=None, create_if_not_exists=False, requests=None):
@@ -81,16 +94,18 @@ def read_user_from_db(id=None, name=None, create_if_not_exists=False, requests=N
     else:
         return 'User with such parrametrs not found!'
 
-    record = cursor.fetchone()
-
     if create_if_not_exists and name is not None:
         user = UserAsync(name=name)
+        id = get_last_user_id() + 1
+        user.id_in_db = id
         if requests is not None:
             user.requests = requests
         return user
 
+    record = cursor.fetchone()
 
     user = UserAsync(record[1])
+    user.id_in_db = record[0]
     user.agent = {'User-Agent': record[2]}
     user.cookies = read_cookies_from_file('data/' + record[3])
 
