@@ -1,0 +1,26 @@
+bots:
+  - name: Libertarian
+    queries:
+      - query1
+      - query2
+      - query3
+    visit_schedule:
+        engine_types:
+          - Google
+          - Bing
+        start_time: '21:09'
+        every_minutes: 0.1
+        num_cycles: 3
+        follow_links: true
+
+  - name: Radicalist
+    queries:
+      - query1
+      - query2
+    visit_schedule:
+        engine_types:
+          - Google
+        start_time: '13:00'
+        every_minutes: 100
+        num_cycles: 10
+        follow_links: true

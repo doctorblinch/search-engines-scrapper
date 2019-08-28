@@ -1,5 +1,5 @@
 from engine_parser_async import EngineParserAsync
-from time import time
+from time import time, sleep
 import asyncio
 import aiohttp
 import os.path
@@ -22,11 +22,11 @@ bot = read_user_from_db(name='Nolan Diagram v1 bot #1', create_if_not_exists=Tru
 #bot = read_user_from_db(name='Nolan Diagram v1 bot #4', create_if_not_exists=True, requests=['прямая линия с путиным', 'налоги', 'присоединение крыма', 'единая россия', 'russia today', 'первый канал', 'дмитрий киселев', 'владимир соловьев', 'программа время', 'пенсии'])
 
 
-async def main():
+async def main(engines_export=None):
     tasks = []
 
-    engines = ['Google', 'Bing', 'Youtube']
-    # engines = ['Google', 'Bing', 'Yahoo']
+    engines = ['Google', 'Bing', 'Youtube'] if engines_export is None else engines_export
+
 
     async with aiohttp.ClientSession() as session:
         if os.path.exists('data/' + bot.file_name):
@@ -55,22 +55,57 @@ async def sub_task(engine, session):
         await engine_parser.start_engine_scrapping(request, number=num_of_links, user=bot,
                                                    language_code='ru', engine=engine,
                                                    use_proxy=False, timeout_range=(3, 6),
-                                                   print_output=False, session=session,
+                                                   print_output=True, session=session,
                                                    all_results=all_results)
 
-
+import yaml
+import os.path
+from datetime import datetime
 
 if __name__ == '__main__':
-    # print(s._cookie_jar)
-    start = time()
+    if os.path.exists('program.yaml'):
+        with open('program.yaml', 'r') as f:
+            plan = yaml.load(f)
+            print(plan)
 
-    asyncio.run(main())
+        for b in plan['bots']:
+            bot = read_user_from_db(name=b['name'], requests=b['queries'], create_if_not_exists=True)
+            sch = b['visit_schedule']
+            now = datetime.today()
+            start_time = datetime.strptime(sch['start_time'],'%H:%M')
+            sleep_for = (start_time.hour - now.hour) * 3600 + (start_time.minute - now.minute) * 60
+            sleep_for = 0 if sleep_for < 0 else sleep_for
+            engines = sch['engine_types']
 
-    write_user_to_db(bot)
-    write_to_db(all_results, user=bot)
-    # write_cookies_to_file(bot,  + bot.file_name)
-    print('\n\nTIME:', time() - start)
+            print(sleep_for)
+            sleep(sleep_for)
+            print('Engine: {}\nStart time: {}\nEvery minutes: {}\nNumber of cycles: {}\nFL: {}\n'.format(sch['engine_types'],sch['start_time'],sch['every_minutes'],sch['num_cycles'],sch['follow_links']))
+            for i in range(sch['num_cycles']):
+                print('\n\n',i+1,'cycle started!\n')
 
-    s._cookie_jar.save('data/' + bot.file_name)
+                start = time()
 
-    # print(all_results)
+                asyncio.run(main(engines_export=engines))
+
+                write_user_to_db(bot)
+                write_to_db(all_results, user=bot)
+
+                print('\n\nTIME:', time() - start)
+
+                s._cookie_jar.save('data/' + bot.file_name)
+                print(i+1,' cycle has passed,', sch['num_cycles']-1-i, 'left, now wait for ',sch['every_minutes'] * 60, ' seconds.\n')
+                sleep(sch['every_minutes'] * 60)
+
+
+        print('THIS IS THE END!')
+    else:
+        start = time()
+
+        asyncio.run(main())
+
+        write_user_to_db(bot)
+        write_to_db(all_results, user=bot)
+
+        print('\n\nTIME:', time() - start)
+
+        s._cookie_jar.save('data/' + bot.file_name)
