@@ -9,11 +9,9 @@ from time import time
 import asyncio
 import aiohttp
 
-from random import choice, uniform
+from random import choice, uniform, randint
 
 import sys
-
-import re
 
 
 def timer(func):
@@ -58,10 +56,12 @@ class EngineParserAsync:
             data = await response.text()
 
             # get cookies
-            user.cookies = session._cookie_jar._cookies
+            user.cookies = session.cookie_jar
+            # user.cookies = session._cookie_jar._cookies
 
             # delay between requests
-            # await asyncio.sleep(timeout)
+            await asyncio.sleep(timeout)
+            # sleep(timeout)
 
             # return HTML code of page
             return data
@@ -191,6 +191,34 @@ class EngineParserAsync:
         # print(found_results)
         return found_results
 
+    async def __go_to_links(self, links, user, session, timeout_range, which_links='all'):
+        if which_links == 'all':
+            urls_dict = links
+        elif which_links == 'random':
+            urls_dict = links[:3] + [choice(links[3:-1]) for _ in range(0, randint(0, len(links) // 3))]
+            print(f'len = {len(urls_dict)}')
+
+        for url in urls_dict:
+            # print(url, type(url))
+            # sleep(uniform(*timeout_range))
+            timeout = uniform(*timeout_range)
+            await asyncio.sleep(timeout)
+            # ssl_context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
+            try:
+                async with session.get(url['link'], headers=user.agent, timeout=timeout) as response:
+                    if response.status != 200:
+                        response.raise_for_status()
+
+                    # get cookies
+                    user.cookies = session._cookie_jar._cookies
+                print()
+                print('Go to {} link  -- engine = {}.'.format(url['link'], url['engine']))
+                print()
+            except:
+                print()
+                print('{} link was blocked -- engine = {}.'.format(url['link'], url['engine']))
+                print()
+
     async def __scrape(self, query, number, language_code, use_proxy, timeout_range, session, user, engine):
         # set User-Agent header
         ua = UserAgent()
@@ -244,7 +272,22 @@ class EngineParserAsync:
                                       session=session, engine=engine)
 
         all_results.append(results)
+        links = []
+        for res in results:
+            links.append(res['link'])
+
+        # try:
+        #     await self.__go_to_links(links=results, user=user, session=session, timeout_range=timeout_range, which_links='random')
+        # except Exception as e:
+        #     print('Exception in __go_to_links')
+
+
+
         # await write_to_db(results, engine)
+        # print(cook)
+        # input()
+        # print(user.cookies)
+        # input()
 
         if print_output:
             print('---------------{}(len={})---------------'.format(engine, len(results)))

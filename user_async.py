@@ -8,6 +8,8 @@ class UserAsync:
         self.user_agent = UserAgent()
         self.agent = {'User-Agent': self.user_agent.random}
         self.cookies = aiohttp.ClientSession.cookie_jar
+        self.file_name = self.name + '.cookies'
+        self.requests = []
 
     def change_data(self, name=None, user_agent=None, cookies=None):
         if name is not None:
