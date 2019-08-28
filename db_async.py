@@ -7,11 +7,17 @@ import os.path
 
 from user_async import UserAsync
 
+
 # import asyncio
 # import aiopg
+db_key = ''
+
+with open('.env', 'r') as f:
+    db_key = f.readline()
+    db_key = db_key[:-1]
 
 up.uses_netloc.append("postgres")
-url = up.urlparse('postgres://zkynsogs:Mtak9HA6-oV5shMzPjZzd-4ZjiYAsVnv@balarama.db.elephantsql.com:5432/zkynsogs')
+url = up.urlparse(db_key)
 # dsn = 'dbname={database} user={user} password={password} host={host} port={port}'.format(database=url.path[1:],
 #                                                                                          user=url.username,
 #                                                                                          password=url.password,
