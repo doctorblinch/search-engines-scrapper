@@ -5,15 +5,16 @@ import aiohttp
 import os.path
 
 from db_async import write_to_db, write_user_to_db, write_cookies_to_file, read_user_from_db
-
 from user_async import UserAsync
 
 
 all_results = []
 s = None
 
+bot = read_user_from_db(name='Music test browser bot', create_if_not_exists=True,
+                        requests=['nirvana', 'abba', 'slipknot'])
 
-bot = read_user_from_db(name='Nolan Diagram v1 bot #1', create_if_not_exists=True, requests=['анархизм', 'митинги', 'нацболы', 'лимонов', 'революция', 'народная самооборона', 'путин вор',  'азат мифтахов', 'русский марш', 'антифашисты'])
+#bot = read_user_from_db(name='Nolan Diagram v1 bot #1', create_if_not_exists=True, requests=['анархизм', 'митинги', 'нацболы', 'лимонов', 'революция', 'народная самооборона', 'путин вор',  'азат мифтахов', 'русский марш', 'антифашисты'])
 
 #bot = read_user_from_db(name='Nolan Diagram v1 bot #2', create_if_not_exists=True, requests=['голунов', 'выборы москва 2019', 'аннексия крым', 'телеканал дождь', 'медуза', 'митинги москва', 'навальный', 'эхо москвы', 'протестные акции', 'собчак'])
 
@@ -22,24 +23,24 @@ bot = read_user_from_db(name='Nolan Diagram v1 bot #1', create_if_not_exists=Tru
 #bot = read_user_from_db(name='Nolan Diagram v1 bot #4', create_if_not_exists=True, requests=['прямая линия с путиным', 'налоги', 'присоединение крыма', 'единая россия', 'russia today', 'первый канал', 'дмитрий киселев', 'владимир соловьев', 'программа время', 'пенсии'])
 
 
-async def main(engines_export=None):
+async def main(engines_export=None, browser=False):
     tasks = []
 
-    engines = ['Google', 'Bing', 'Youtube'] if engines_export is None else engines_export
+    engines = ['Google'] if engines_export is None else engines_export
 
 
     async with aiohttp.ClientSession() as session:
         if os.path.exists('data/' + bot.file_name):
             session._cookie_jar.load('data/' + bot.file_name)
         for engine in engines:
-            task = asyncio.create_task(sub_task(engine, session))
+            task = asyncio.create_task(sub_task(engine, session, browser))
             tasks.append(task)
         global s
         s = session
         await asyncio.gather(*tasks)
 
 
-async def sub_task(engine, session):
+async def sub_task(engine, session, browser=False):
     engine_parser = EngineParserAsync()
     num_of_links = 10
 
@@ -51,19 +52,23 @@ async def sub_task(engine, session):
     else:
         requests = bot.requests
 
+    if browser:
+        await engine_parser.start_engine_scrapping(requests, number=num_of_links, user=bot, language_code='ru',
+                                                   print_output=True, all_results=all_results, engine=engine, browser=True)
+
     for request in requests:
         await engine_parser.start_engine_scrapping(request, number=num_of_links, user=bot,
                                                    language_code='ru', engine=engine,
                                                    use_proxy=False, timeout_range=(3, 6),
                                                    print_output=True, session=session,
-                                                   all_results=all_results)
+                                                   all_results=all_results, browser=True)
 
 import yaml
 import os.path
 from datetime import datetime
 
 if __name__ == '__main__':
-    if os.path.exists('program.yaml'):
+    if not os.path.exists('program.yaml'):
         with open('program.yaml', 'r') as f:
             plan = yaml.load(f)
             print(plan)
@@ -101,10 +106,10 @@ if __name__ == '__main__':
     else:
         start = time()
 
-        asyncio.run(main())
+        asyncio.run(main(browser=True))
 
-        write_user_to_db(bot)
-        write_to_db(all_results, user=bot)
+        #write_user_to_db(bot)
+        #write_to_db(all_results, user=bot)
 
         print('\n\nTIME:', time() - start)
 

@@ -136,12 +136,15 @@ def write_user_to_db(user):
 
 def write_cookies_to_file(user, file_name=None):
     if file_name is None:
-        file_name = user.name + '.cookies'
+        file_name = 'data/' + user.name + '.cookies'
     with open(file_name, 'wb') as f:
         pickle.dump(user.cookies, f)
 
 
 def read_cookies_from_file_pickle(file_name):
+    if not os.path.exists('data/' + file_name):
+        return 'not exists'
+    file_name = 'data/' + file_name
     with open(file_name, 'rb') as f:
         cookies_data = pickle.load(f)
     return cookies_data

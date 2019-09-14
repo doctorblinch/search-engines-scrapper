@@ -1,17 +1,21 @@
 import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-from datetime import datetime
-
-from user_async import UserAsync
-
-from time import time
 import asyncio
 import aiohttp
 
+from datetime import datetime
 from random import choice, uniform, randint
-
+from time import time, sleep
 import sys
+
+
+from user_async import UserAsync
+from db_async import read_cookies_from_file_pickle, write_cookies_to_file
+
+from pyvirtualdisplay import Display
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 
 
 def timer(func):
@@ -30,6 +34,56 @@ def timer(func):
 class EngineParserAsync:
     def __init__(self):
         pass
+
+    def __browser_results(self, queries, number, language_code, timeout=1.867, engine='google', display_size=(1920,1080),
+                          user=None, go_to_links=False):
+
+        display = Display(visible=1, size=display_size)
+        display.start()
+
+        browser = webdriver.Firefox()
+        user.cookies = read_cookies_from_file_pickle(user.file_name)
+
+        engines = {'google': 'https://google.com',
+                   'bing': 'https://www.bing.com'}
+
+        find_elements = {'google': 'div.g',
+                         'bing': 'div.b title'}
+        results = {}
+
+        browser.get(engines[engine])
+
+        if user.cookies != 'not exists':
+            for cookie in user.cookies:
+                pass
+  #              browser.add_cookie(cookie)
+
+        for q in queries:
+            sleep(0.3)
+            search_field = browser.find_element_by_name('q')
+            search_field.clear()
+            search_field.send_keys(q)
+            sleep(timeout)
+            search_field.send_keys(Keys.RETURN)
+            sleep(timeout)
+            results.update({q: browser.page_source})
+            if go_to_links:
+                sleep(1)
+                elements = browser.find_elements_by_css_selector(find_elements[engine])
+                #elements = browser.find_elements_by_css_selector('div.b_title')
+                for e in elements[:-1]:
+                    sleep(0.2)
+                    l = e.find_element_by_tag_name('a')
+                    l.send_keys(Keys.CONTROL + Keys.RETURN)
+                    sleep(0.2)
+                    browser.switch_to.window(browser.window_handles[1])
+                    browser.close()
+                    browser.switch_to.window(browser.window_handles[0])
+
+#        user.cookies = browser.get_cookies()
+ #       write_cookies_to_file(user)
+        return results
+
 
     # @timer
     async def __fetch_results(self, query, number, language_code, user_agent=None, user: UserAsync = None,
@@ -219,10 +273,35 @@ class EngineParserAsync:
                 print('{} link was blocked -- engine = {}.'.format(url['link'], url['engine']))
                 print()
 
-    async def __scrape(self, query, number, language_code, use_proxy, timeout_range, session, user, engine):
+    async def __scrape_browser(self, queries, number, language_code, timeout_range, user, engine):
+        result = []
+        try:
+            browser_results = self.__browser_results(queries=queries,number=number,language_code=language_code,
+                                       engine=engine,user=user,go_to_links=True)
+
+            for i, res in enumerate(browser_results):
+                #print(res, browser_results[res])
+
+
+                if engine == 'bing':
+                    result.append(self.__parse_bing_html(html=browser_results[res], query=queries[i], engine=engine))
+                elif engine == 'google':
+                    result.append(self.__parse_google_html(html=browser_results[res], query=queries[i], engine=engine))
+                elif engine == 'yahoo':
+                    result.append(self.__parse_yahoo_html(html=browser_results[res], query=queries[i], engine=engine))
+                elif engine == 'youtube':
+                    result.append(self.__parse_youtube_html(html=browser_results[res], query=queries[i], engine=engine))
+
+        except Exception as e:
+            print('Error!!!', e)
+            return
+        return result
+
+    async def __scrape(self, query, number, language_code, use_proxy, timeout_range, session, user, engine, browser=False):
         # set User-Agent header
-        ua = UserAgent()
-        user_agent = {"User-Agent": ua.random}
+        if user in None:
+            ua = UserAgent()
+            user_agent = {"User-Agent": ua.random}
 
         # set proxy
         if use_proxy:
@@ -236,10 +315,16 @@ class EngineParserAsync:
         timeout = uniform(*timeout_range)
 
         try:
-            # get HTML code of some page
-            html = await self.__fetch_results(query=query, number=number, language_code=language_code, engine=engine,
-                                              user_agent=user_agent, proxy=proxy, timeout=timeout, session=session,
-                                              user=user)
+
+            if not browser:
+                # get HTML code of some page
+                html = await self.__fetch_results(query=query, number=number, language_code=language_code,
+                                                  engine=engine, user_agent=user_agent, proxy=proxy, timeout=timeout,
+                                                  session=session, user=user)
+            else:
+                html = self.__browser_results(query=query, number=number, language_code=language_code, engine=engine,
+                                              user=user, timeout=timeout)
+
 
             # parse results
             if engine == 'bing':
@@ -251,6 +336,7 @@ class EngineParserAsync:
             elif engine == 'youtube':
                 return self.__parse_youtube_html(html=html, query=query, engine=engine)
 
+
         except AssertionError:
             raise Exception("Incorrect arguments parsed to function")
         except requests.HTTPError:
@@ -258,22 +344,31 @@ class EngineParserAsync:
         except requests.RequestException:
             raise Exception("Appears to be an issue with your connection")
 
+
+
     async def start_engine_scrapping(self, query, number=10, language_code='ru', user=None,
                                      print_output=False, engine='google', use_proxy=False,
-                                     timeout_range=(3, 5), session=None, all_results=[]):
+                                     timeout_range=(3, 5), session=None, browser=False, all_results=[]):
         # set search engine
         engine = engine.lower()
 
         # get results
-        results = await self.__scrape(query=query, number=number,
-                                      language_code=language_code,
-                                      use_proxy=use_proxy, user=user,
-                                      timeout_range=timeout_range,
-                                      session=session, engine=engine)
+        if not browser:
+            results = await self.__scrape(query=query, number=number,
+                                          language_code=language_code,
+                                          use_proxy=use_proxy, user=user,
+                                          timeout_range=timeout_range,
+                                          session=session, engine=engine, browser=browser)
+            all_results = results
 
-        all_results.append(results)
+        else:
+            results = await self.__scrape_browser(queries=query, number=number, language_code=language_code,
+                                                  timeout_range=timeout_range, user=user, engine=engine)
+            all_results.append(results)
+
+
         links = []
-        for res in results:
+        for res in all_results:
             links.append(res['link'])
 
         # try:
