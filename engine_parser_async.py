@@ -55,8 +55,8 @@ class EngineParserAsync:
 
         if user.cookies != 'not exists':
             for cookie in user.cookies:
-                pass
-  #              browser.add_cookie(cookie)
+  #              pass
+                browser.add_cookie(cookie)
 
         for q in queries:
             sleep(0.3)
@@ -71,17 +71,21 @@ class EngineParserAsync:
                 sleep(1)
                 elements = browser.find_elements_by_css_selector(find_elements[engine])
                 #elements = browser.find_elements_by_css_selector('div.b_title')
-                for e in elements[:-1]:
-                    sleep(0.2)
-                    l = e.find_element_by_tag_name('a')
-                    l.send_keys(Keys.CONTROL + Keys.RETURN)
-                    sleep(0.2)
-                    browser.switch_to.window(browser.window_handles[1])
-                    browser.close()
-                    browser.switch_to.window(browser.window_handles[0])
 
-#        user.cookies = browser.get_cookies()
- #       write_cookies_to_file(user)
+                for e in elements[:-1]:
+                       sleep(0.2)
+                       l = e.find_element_by_tag_name('a')
+                       try:
+                           #l.click()
+                           l.send_keys(Keys.CONTROL + Keys.RETURN)
+                           sleep(0.2)
+                           browser.switch_to.window(browser.window_handles[1])
+                           browser.close()
+                           browser.switch_to.window(browser.window_handles[0])
+                       except Exception as e:
+                           print('Error while clicking on links:', e)
+        user.cookies = browser.get_cookies()
+        write_cookies_to_file(user)
         return results
 
 
@@ -273,7 +277,7 @@ class EngineParserAsync:
                 print('{} link was blocked -- engine = {}.'.format(url['link'], url['engine']))
                 print()
 
-    async def __scrape_browser(self, queries, number, language_code, timeout_range, user, engine):
+    def __scrape_browser(self, queries, number, language_code, timeout_range, user, engine):
         result = []
         try:
             browser_results = self.__browser_results(queries=queries,number=number,language_code=language_code,
@@ -359,18 +363,20 @@ class EngineParserAsync:
                                           use_proxy=use_proxy, user=user,
                                           timeout_range=timeout_range,
                                           session=session, engine=engine, browser=browser)
-            all_results = results
+            all_results.append(results)
 
         else:
-            results = await self.__scrape_browser(queries=query, number=number, language_code=language_code,
+            results = self.__scrape_browser(queries=query, number=number, language_code=language_code,
                                                   timeout_range=timeout_range, user=user, engine=engine)
-            all_results.append(results)
+            for r in results:
+                for i in r:
+                    all_results.append(i)
+
 
 
         links = []
         for res in all_results:
             links.append(res['link'])
-
         # try:
         #     await self.__go_to_links(links=results, user=user, session=session, timeout_range=timeout_range, which_links='random')
         # except Exception as e:
@@ -386,7 +392,7 @@ class EngineParserAsync:
 
         if print_output:
             print('---------------{}(len={})---------------'.format(engine, len(results)))
-            for res in results:
+            for res in all_results:
                 for key in res.keys():
                     if key == 'index':
                         print(key + ': ' + str(res[key]))

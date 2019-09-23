@@ -11,16 +11,16 @@ from user_async import UserAsync
 all_results = []
 s = None
 
-bot = read_user_from_db(name='Music test browser bot', create_if_not_exists=True,
-                        requests=['nirvana', 'abba', 'slipknot'])
 
-#bot = read_user_from_db(name='Nolan Diagram v1 bot #1', create_if_not_exists=True, requests=['анархизм', 'митинги', 'нацболы', 'лимонов', 'революция', 'народная самооборона', 'путин вор',  'азат мифтахов', 'русский марш', 'антифашисты'])
+bot = read_user_from_db(name='Nolan Diagram v2 bot #3', create_if_not_exists=True, requests=['прямая линия с путиным', 'налоги', 'присоединение крыма', 'единая россия', 'russia today', 'первый канал', 'дмитрий киселев', 'владимир соловьев', 'программа время', 'пенсии'])
 
-#bot = read_user_from_db(name='Nolan Diagram v1 bot #2', create_if_not_exists=True, requests=['голунов', 'выборы москва 2019', 'аннексия крым', 'телеканал дождь', 'медуза', 'митинги москва', 'навальный', 'эхо москвы', 'протестные акции', 'собчак'])
+#bot = read_user_from_db(name='Nolan Diagram v2 bot #1', create_if_not_exists=True, requests=['анархизм', 'митинги', 'нацболы', 'лимонов', 'революция', 'народная самооборона', 'путин вор',  'азат мифтахов', 'русский марш', 'антифашисты'])
 
-#bot = read_user_from_db(name='Nolan Diagram v1 bot #3', create_if_not_exists=True, requests=['коммунисты', 'зюганов', 'советский союз', 'кпрф', 'армия', 'оборона страны', 'возвращение крыма', 'пенсии', 'сталин', 'шойгу'])
+#bot = read_user_from_db(name='Nolan Diagram v2 bot #2', create_if_not_exists=True, requests=['голунов', 'выборы москва 2019', 'аннексия крым', 'телеканал дождь', 'медуза', 'митинги москва', 'навальный', 'эхо москвы', 'протестные акции', 'собчак'])
 
-#bot = read_user_from_db(name='Nolan Diagram v1 bot #4', create_if_not_exists=True, requests=['прямая линия с путиным', 'налоги', 'присоединение крыма', 'единая россия', 'russia today', 'первый канал', 'дмитрий киселев', 'владимир соловьев', 'программа время', 'пенсии'])
+#bot = read_user_from_db(name='Nolan Diagram v2 bot #3', create_if_not_exists=True, requests=['коммунисты', 'зюганов', 'советский союз', 'кпрф', 'армия', 'оборона страны', 'возвращение крыма', 'пенсии', 'сталин', 'шойгу'])
+
+#bot = read_user_from_db(name='Nolan Diagram v2 bot #4', create_if_not_exists=True, requests=['прямая линия с путиным', 'налоги', 'присоединение крыма', 'единая россия', 'russia today', 'первый канал', 'дмитрий киселев', 'владимир соловьев', 'программа время', 'пенсии'])
 
 
 async def main(engines_export=None, browser=False):
@@ -55,6 +55,7 @@ async def sub_task(engine, session, browser=False):
     if browser:
         await engine_parser.start_engine_scrapping(requests, number=num_of_links, user=bot, language_code='ru',
                                                    print_output=True, all_results=all_results, engine=engine, browser=True)
+        return
 
     for request in requests:
         await engine_parser.start_engine_scrapping(request, number=num_of_links, user=bot,
@@ -68,7 +69,7 @@ import os.path
 from datetime import datetime
 
 if __name__ == '__main__':
-    if not os.path.exists('program.yaml'):
+    if False and os.path.exists('program.yaml'):
         with open('program.yaml', 'r') as f:
             plan = yaml.load(f)
             print(plan)
@@ -108,9 +109,9 @@ if __name__ == '__main__':
 
         asyncio.run(main(browser=True))
 
-        #write_user_to_db(bot)
-        #write_to_db(all_results, user=bot)
+#        write_user_to_db(bot)
+        write_to_db(all_results, user=bot)
 
         print('\n\nTIME:', time() - start)
 
-        s._cookie_jar.save('data/' + bot.file_name)
+        #s._cookie_jar.save('data/' + bot.file_name)

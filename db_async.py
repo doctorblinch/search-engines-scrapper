@@ -54,8 +54,8 @@ def write_to_db(result, engine='', user=None):
         print(type(id), id)
 
     cursor = connection.cursor()
-    for res in result:
-        for element in res:
+    #for res in result:
+    for element in result:
             # print(len(element['description']))
             # print(len(element['link']))
             # print(len(element['title']))
