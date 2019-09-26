@@ -23,11 +23,13 @@ bot = read_user_from_db(name='Nolan Diagram v2 bot #3', create_if_not_exists=Tru
 #bot = read_user_from_db(name='Nolan Diagram v2 bot #4', create_if_not_exists=True, requests=['прямая линия с путиным', 'налоги', 'присоединение крыма', 'единая россия', 'russia today', 'первый канал', 'дмитрий киселев', 'владимир соловьев', 'программа время', 'пенсии'])
 
 
-async def main(engines_export=None, browser=False):
+async def main(engines_export=None, browser=False, b=None):
     tasks = []
 
     engines = ['Google'] if engines_export is None else engines_export
-
+    if b is not None:
+        global bot
+        bot = b
 
     async with aiohttp.ClientSession() as session:
         if os.path.exists('data/' + bot.file_name):
@@ -68,42 +70,62 @@ import yaml
 import os.path
 from datetime import datetime
 
-if __name__ == '__main__':
-    if False and os.path.exists('program.yaml'):
+
+def program(file_name='program.yaml'):
+    if os.path.exists('program.yaml'):
         with open('program.yaml', 'r') as f:
             plan = yaml.load(f)
             print(plan)
 
+        schedule = {}
         for b in plan['bots']:
             bot = read_user_from_db(name=b['name'], requests=b['queries'], create_if_not_exists=True)
             sch = b['visit_schedule']
-            now = datetime.today()
-            start_time = datetime.strptime(sch['start_time'],'%H:%M')
-            sleep_for = (start_time.hour - now.hour) * 3600 + (start_time.minute - now.minute) * 60
-            sleep_for = 0 if sleep_for < 0 else sleep_for
             engines = sch['engine_types']
-
-            print(sleep_for)
-            sleep(sleep_for)
-            print('Engine: {}\nStart time: {}\nEvery minutes: {}\nNumber of cycles: {}\nFL: {}\n'.format(sch['engine_types'],sch['start_time'],sch['every_minutes'],sch['num_cycles'],sch['follow_links']))
             for i in range(sch['num_cycles']):
-                print('\n\n',i+1,'cycle started!\n')
+                hours, minutes = sch['start_time'].split(':')
+                days = 0
+                hours = int(hours)
+                minutes = float(minutes)
+                minutes += i * sch['every_minutes']
+                if minutes >= 60:
+                    hours += int(minutes // 60)
+                    minutes = minutes % 60
+                if hours >= 24:
+                    days += hours // 24
+                    hours = hours % 24
+                start_time = datetime.strptime(str(hours) + ':' + str(minutes).split('.')[0], '%H:%M')
+                start_time = start_time.replace(year=datetime.now().year, month=datetime.now().month,
+                                                day=datetime.now().day + days)
+                schedule.update({start_time: bot})
+            #print('Engine: {}\nStart time: {}\nEvery minutes: {}\nNumber of cycles: {}\nFL: {}\n'.format(
+             #   sch['engine_types'],sch['start_time'],sch['every_minutes'],sch['num_cycles'],sch['follow_links']))
 
-                start = time()
+        keys = list(schedule.keys())
+        keys.sort()
+        for key in keys:
+            print(schedule[key])
+            print((key - datetime.now()).total_seconds())
+            if (key - datetime.now()).total_seconds() > 0:
+                sleep((key - datetime.now()).total_seconds())
+            start = time()
 
-                asyncio.run(main(engines_export=engines))
+            asyncio.run(main(engines_export=engines, b=schedule[key], browser=True))
+            global all_results
+            write_user_to_db(bot)
+            write_to_db(all_results, user=bot)
+            all_results = []
+            print('\n\nTIME:', time() - start)
 
-                write_user_to_db(bot)
-                write_to_db(all_results, user=bot)
-
-                print('\n\nTIME:', time() - start)
-
-                s._cookie_jar.save('data/' + bot.file_name)
-                print(i+1,' cycle has passed,', sch['num_cycles']-1-i, 'left, now wait for ',sch['every_minutes'] * 60, ' seconds.\n')
-                sleep(sch['every_minutes'] * 60)
 
 
         print('THIS IS THE END!')
+
+
+if __name__ == '__main__':
+    file_name = 'program.yaml'
+    if os.path.exists(file_name):
+        program(file_name)
     else:
         start = time()
 

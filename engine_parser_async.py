@@ -86,6 +86,8 @@ class EngineParserAsync:
                            print('Error while clicking on links:', e)
         user.cookies = browser.get_cookies()
         write_cookies_to_file(user)
+        browser.quit()
+        display.stop()
         return results
 
 

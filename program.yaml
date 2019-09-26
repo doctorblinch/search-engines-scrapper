@@ -9,7 +9,7 @@ bots:
           - Google
           - Bing
         start_time: '21:09'
-        every_minutes: 0.1
+        every_minutes: 10
         num_cycles: 3
         follow_links: true
 
@@ -20,7 +20,7 @@ bots:
     visit_schedule:
         engine_types:
           - Google
-        start_time: '13:00'
-        every_minutes: 100
+        start_time: '13:40'
+        every_minutes: 10
         num_cycles: 10
         follow_links: true

@@ -14,7 +14,8 @@ db_key = ''
 
 with open('.env', 'r') as f:
     db_key = f.readline()
-    db_key = db_key[:-1]
+    #db_key = db_key[:-1]
+    print(db_key)
 
 up.uses_netloc.append("postgres")
 url = up.urlparse(db_key)
